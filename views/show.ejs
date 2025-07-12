@@ -3,74 +3,203 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title><%= filename.replace('.txt', '') %> - TextVault</title>
+    <script>
+        // Prevent flash of wrong theme - this must run before any CSS loads
+        (function() {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            document.documentElement.classList.toggle('dark', savedTheme === 'dark');
+        })();
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://kit.fontawesome.com/ff444f3eca.js" crossorigin="anonymous"></script> <!-- Your Font Awesome Kit -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#f0f9ff',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            900: '#1e3a8a'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
+        * { font-family: 'Inter', sans-serif; }
+        .content-text { font-family: 'JetBrains Mono', monospace; line-height: 1.7; }
+        .sidebar-transition { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .file-item { transition: all 0.2s ease; }
+        .file-item:hover { transform: translateX(4px); }
+    </style>
 </head>
-<body class="bg-zinc-900 text-white">
+<body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+    <!-- Header -->
+    <header class="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-4">
+                    <a href="/" class="flex items-center space-x-2 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200">
+                        <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                        <span class="font-medium">Back to Notes</span>
+                    </a>
+                    <div class="hidden sm:block w-px h-6 bg-gray-300 dark:bg-gray-600"></div>
+                    <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                            <i data-lucide="file-text" class="w-4 h-4 text-white"></i>
+                        </div>
+                        <h1 class="text-xl font-bold text-gray-900 dark:text-white">TextVault</h1>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <button 
+                        id="toggleSidebar" 
+                        class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200"
+                        aria-label="Toggle sidebar">
+                        <i data-lucide="menu" class="w-5 h-5 text-gray-700 dark:text-gray-300"></i>
+                    </button>
+                    <button 
+                        id="theme-toggle" 
+                        class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200"
+                        aria-label="Toggle theme">
+                        <i data-lucide="sun" class="w-5 h-5 text-gray-700 dark:text-gray-300 dark:hidden"></i>
+                        <i data-lucide="moon" class="w-5 h-5 text-gray-300 hidden dark:block"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
     <div class="flex min-h-screen">
         <!-- Sidebar -->
-        <aside id="sidebar" class="w-1/5 bg-zinc-800  transition-all duration-300 ease-in-out relative pt-12">
-            <!-- Collapse button and "All Files" on the same line -->
-            <div class="flex items-center mb-5">
-                <!-- Collapse button with FontAwesome arrow icons -->
-                <button id="toggleSidebar" class="text-white pl-3 ">
-                    <i id="toggleIcon" class="fas fa-arrow-right"></i> <!-- FontAwesome Arrow Icon -->
-                </button>
-                <!-- "All Files" Title -->
-                <h2 id="sidebarTitle" class="text-lg font-semibold pl-2">All Files</h2>
+        <aside id="sidebar" class="sidebar-transition w-80 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 overflow-y-auto">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+                        <i data-lucide="folder" class="w-5 h-5 mr-2 text-blue-500"></i>
+                        All Notes
+                        <span class="ml-2 text-sm font-normal text-gray-500 dark:text-gray-400">(<%= files.length %>)</span>
+                    </h2>
+                </div>
+                
+                <div class="space-y-2">
+                    <% files.forEach(file => { %>
+                        <div class="file-item">
+                            <a 
+                                href="/files/<%= file %>" 
+                                class="block p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200 <%= file === filename ? 'bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500' : '' %>"
+                            >
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center space-x-3 flex-1 min-w-0">
+                                        <i data-lucide="file-text" class="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0"></i>
+                                        <span class="text-sm font-medium text-gray-900 dark:text-white truncate <%= file === filename ? 'text-blue-700 dark:text-blue-300' : '' %>">
+                                            <%= file.replace('.txt', '') %>
+                                        </span>
+                                    </div>
+                                    <% if (file === filename) { %>
+                                        <i data-lucide="eye" class="w-4 h-4 text-blue-500 flex-shrink-0"></i>
+                                    <% } %>
+                                </div>
+                            </a>
+                        </div>
+                    <% }); %>
+                </div>
             </div>
-            
-            <!-- Sidebar Content -->
-            <ul id="fileList" class="space-y-3 pl-8">
-                <% files.forEach(file => { %>
-                <li class="file-item">
-                    <a 
-                        href="/files/<%= file %>" 
-                        class="block text-blue-400 hover:text-blue-500"
-                    >
-                        <%= file %>
-                    </a>
-                </li>
-                <% }); %>
-            </ul>
         </aside>
 
         <!-- Main Content -->
-        <div class="main flex-1 p-10">
-            <!-- Home Icon -->
-            <a class="text-blue-500 inline-block mb-10" href="/">
-                <i class="fas fa-home text-2xl mr-2"></i> <!-- Font Awesome Home Icon -->
-                Home
-            </a>
-            <h1 class="text-white text-4xl tracking-tighter"><%= filename %></h1>
-            <p class="text-xl mt-5 font-light whitespace-pre-wrap"><%= filedata %></p> <!-- Preserved formatting in filedata -->
+        <div class="flex-1 flex flex-col min-w-0">
+            <div class="p-6 sm:p-8 flex-1">
+                <!-- Note Header -->
+                <div class="mb-8">
+                    <div class="flex items-center justify-between mb-4">
+                        <h1 class="text-3xl font-bold text-gray-900 dark:text-white break-words">
+                            <%= filename.replace('.txt', '') %>
+                        </h1>
+                        <div class="flex items-center space-x-2">
+                            <a 
+                                href="/edit/<%= filename %>" 
+                                class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-sm transition-colors duration-200">
+                                <i data-lucide="edit" class="w-4 h-4 mr-2"></i>
+                                Edit Note
+                            </a>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
+                        <div class="flex items-center">
+                            <i data-lucide="calendar" class="w-4 h-4 mr-1"></i>
+                            <span>Text Document</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i data-lucide="type" class="w-4 h-4 mr-1"></i>
+                            <span><%= filedata.length %> characters</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Note Content -->
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 sm:p-8">
+                    <div class="prose prose-gray dark:prose-invert max-w-none">
+                        <pre class="content-text text-gray-800 dark:text-gray-200 whitespace-pre-wrap break-words"><%= filedata %></pre>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // Theme toggle functionality (simplified since theme is already applied)
+        const themeToggle = document.getElementById('theme-toggle');
+        const html = document.documentElement;
+
+        themeToggle.addEventListener('click', () => {
+            const isDark = html.classList.contains('dark');
+            html.classList.toggle('dark', !isDark);
+            localStorage.setItem('theme', !isDark ? 'dark' : 'light');
+        });
+
+        // Sidebar toggle functionality
         const sidebar = document.getElementById('sidebar');
         const toggleButton = document.getElementById('toggleSidebar');
-        const toggleIcon = document.getElementById('toggleIcon');
-        const sidebarTitle = document.getElementById('sidebarTitle');
-        const fileList = document.getElementById('fileList');
+        let sidebarOpen = true;
 
         toggleButton.addEventListener('click', () => {
-            sidebar.classList.toggle('w-1/5'); 
-            sidebar.classList.toggle('w-0');   
-
-            if (sidebar.classList.contains('w-0')) {
-                fileList.style.display = 'none'; 
-                sidebarTitle.style.display = 'none'; 
-                toggleIcon.classList.remove('fa-arrow-right');
-                toggleIcon.classList.add('fa-arrow-left');
+            sidebarOpen = !sidebarOpen;
+            
+            if (sidebarOpen) {
+                sidebar.classList.remove('-translate-x-full');
+                sidebar.classList.add('translate-x-0');
             } else {
-                fileList.style.display = 'block'; 
-                sidebarTitle.style.display = 'block'; 
-                toggleIcon.classList.remove('fa-arrow-left');
-                toggleIcon.classList.add('fa-arrow-right');
+                sidebar.classList.add('-translate-x-full');
+                sidebar.classList.remove('translate-x-0');
             }
         });
+
+        // Responsive sidebar behavior
+        function handleResize() {
+            if (window.innerWidth < 768) {
+                sidebar.classList.add('absolute', 'z-40', 'h-full');
+                if (!sidebarOpen) {
+                    sidebar.classList.add('-translate-x-full');
+                }
+            } else {
+                sidebar.classList.remove('absolute', 'z-40', 'h-full', '-translate-x-full');
+            }
+        }
+
+        window.addEventListener('resize', handleResize);
+        handleResize();
     </script>
 </body>
 </html>
