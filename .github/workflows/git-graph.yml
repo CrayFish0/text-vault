@@ -21,22 +21,22 @@ jobs:
       - name: Install tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y gource ffmpeg imagemagick
+          sudo apt-get install -y gource ffmpeg xvfb
 
-      # 3. Generate visualization
+      # 3. Generate graph with virtual display
       - name: Generate graph
         run: |
-          gource \
+          xvfb-run -a gource \
             --seconds-per-day 0.2 \
             --auto-skip-seconds 1 \
             --hide filenames \
-            --background-color 000000 \
+            --background 000000 \
             --resolution 1280x720 \
             --output-ppm-stream - \
           | ffmpeg -y -r 60 -f image2pipe -vcodec ppm -i - \
             -vcodec libx264 -pix_fmt yuv420p graph.mp4
 
-      # 4. Convert to GIF (README friendly)
+      # 4. Convert to GIF
       - name: Convert to GIF
         run: |
           ffmpeg -i graph.mp4 -vf "fps=10,scale=800:-1:flags=lanczos" graph.gif
