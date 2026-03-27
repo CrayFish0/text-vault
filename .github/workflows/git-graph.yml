@@ -1,4 +1,4 @@
-name: Update Git Graph
+name: Update Git Graph (Gitgraph)
 
 on:
   push:
@@ -11,40 +11,61 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout full repo history
-      - name: Checkout repository
+      - name: Checkout repo
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
-      # 2. Generate git graph text
-      - name: Generate graph text
-        run: |
-          git log --all --graph --pretty=format:'%h - %s (%cr)' --abbrev-commit > graph.txt
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
 
-      # 3. Convert to image
-      - name: Convert to image
+      - name: Install dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y imagemagick
-          convert -background white -fill black -font Courier -pointsize 14 text:graph.txt graph.png
+          npm init -y
+          npm install @gitgraph/js canvas
 
-      # 4. Push to graph branch
+      - name: Generate graph image
+        run: |
+          cat << 'EOF' > generate.js
+          const fs = require("fs");
+          const { createCanvas } = require("canvas");
+          const { GitgraphCore, templateExtend } = require("@gitgraph/js");
+
+          const canvas = createCanvas(1200, 800);
+          const ctx = canvas.getContext("2d");
+
+          const gitgraph = new GitgraphCore({
+            canvas: ctx,
+            template: templateExtend("metro", {}),
+          });
+
+          const main = gitgraph.branch("main");
+          main.commit("Start");
+
+          const feature = main.branch("feature");
+          feature.commit("Feature work");
+
+          main.merge(feature);
+
+          const buffer = canvas.toBuffer("image/png");
+          fs.writeFileSync("graph.png", buffer);
+          EOF
+
+          node generate.js
+
       - name: Push to graph branch
         run: |
           git clone --depth=1 --branch graph https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} graph-branch || \
-          git clone --depth=1 https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} graph-branch
+          git clone https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} graph-branch
 
+          cp graph.png graph-branch/
           cd graph-branch
-
-          git checkout graph || git checkout -b graph
-
-          cp ../graph.png .
 
           git config user.name "github-actions"
           git config user.email "actions@github.com"
 
           git add graph.png
           git commit -m "Update git graph" || echo "No changes"
-
-          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} graph
+          git push
