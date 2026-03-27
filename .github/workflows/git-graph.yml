@@ -1,4 +1,4 @@
-name: Update Git Graph (Gitgraph)
+name: Update Git Graph (Gource)
 
 on:
   push:
@@ -11,61 +11,48 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1. Checkout full history
       - name: Checkout repo
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18
-
-      - name: Install dependencies
+      # 2. Install dependencies
+      - name: Install tools
         run: |
-          npm init -y
-          npm install @gitgraph/js canvas
+          sudo apt-get update
+          sudo apt-get install -y gource ffmpeg imagemagick
 
-      - name: Generate graph image
+      # 3. Generate visualization
+      - name: Generate graph
         run: |
-          cat << 'EOF' > generate.js
-          const fs = require("fs");
-          const { createCanvas } = require("canvas");
-          const { GitgraphCore, templateExtend } = require("@gitgraph/js");
+          gource \
+            --seconds-per-day 0.2 \
+            --auto-skip-seconds 1 \
+            --hide filenames \
+            --background-color 000000 \
+            --resolution 1280x720 \
+            --output-ppm-stream - \
+          | ffmpeg -y -r 60 -f image2pipe -vcodec ppm -i - \
+            -vcodec libx264 -pix_fmt yuv420p graph.mp4
 
-          const canvas = createCanvas(1200, 800);
-          const ctx = canvas.getContext("2d");
+      # 4. Convert to GIF (README friendly)
+      - name: Convert to GIF
+        run: |
+          ffmpeg -i graph.mp4 -vf "fps=10,scale=800:-1:flags=lanczos" graph.gif
 
-          const gitgraph = new GitgraphCore({
-            canvas: ctx,
-            template: templateExtend("metro", {}),
-          });
-
-          const main = gitgraph.branch("main");
-          main.commit("Start");
-
-          const feature = main.branch("feature");
-          feature.commit("Feature work");
-
-          main.merge(feature);
-
-          const buffer = canvas.toBuffer("image/png");
-          fs.writeFileSync("graph.png", buffer);
-          EOF
-
-          node generate.js
-
+      # 5. Push to graph branch
       - name: Push to graph branch
         run: |
           git clone --depth=1 --branch graph https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} graph-branch || \
           git clone https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} graph-branch
 
-          cp graph.png graph-branch/
+          cp graph.gif graph-branch/
           cd graph-branch
 
           git config user.name "github-actions"
           git config user.email "actions@github.com"
 
-          git add graph.png
-          git commit -m "Update git graph" || echo "No changes"
+          git add graph.gif
+          git commit -m "Update gource graph" || echo "No changes"
           git push
