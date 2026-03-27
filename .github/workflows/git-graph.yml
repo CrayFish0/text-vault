@@ -1,58 +1,43 @@
-name: Update Git Graph (Gource)
+name: Git Graph Visual
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   workflow_dispatch:
 
 jobs:
-  generate-graph:
+  graph:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout full history
-      - name: Checkout repo
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
-      # 2. Install dependencies
-      - name: Install tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y gource ffmpeg xvfb
+      - name: Install graphviz
+        run: sudo apt-get update && sudo apt-get install -y graphviz
 
-      # 3. Generate graph with virtual display
-      - name: Generate graph
+      - name: Generate DOT graph
         run: |
-          xvfb-run -a gource \
-            --seconds-per-day 0.2 \
-            --auto-skip-seconds 1 \
-            --hide filenames \
-            --background 000000 \
-            --resolution 1280x720 \
-            --output-ppm-stream - \
-          | ffmpeg -y -r 60 -f image2pipe -vcodec ppm -i - \
-            -vcodec libx264 -pix_fmt yuv420p graph.mp4
+          git log --all --pretty=format:'"%h" -> "%p"' | sed 's/ /"; "/g' > graph.dot
+          echo "digraph G {" > final.dot
+          cat graph.dot >> final.dot
+          echo "}" >> final.dot
 
-      # 4. Convert to GIF
-      - name: Convert to GIF
-        run: |
-          ffmpeg -i graph.mp4 -vf "fps=10,scale=800:-1:flags=lanczos" graph.gif
+      - name: Convert to PNG
+        run: dot -Tpng final.dot -o graph.png
 
-      # 5. Push to graph branch
       - name: Push to graph branch
         run: |
           git clone --depth=1 --branch graph https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} graph-branch || \
           git clone https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} graph-branch
 
-          cp graph.gif graph-branch/
+          cp graph.png graph-branch/
           cd graph-branch
 
           git config user.name "github-actions"
           git config user.email "actions@github.com"
 
-          git add graph.gif
-          git commit -m "Update gource graph" || echo "No changes"
+          git add graph.png
+          git commit -m "update graph" || echo "no changes"
           git push
