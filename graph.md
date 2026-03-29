@@ -1,12 +1,5 @@
-
-## Git Graph
-
 ```mermaid
 gitGraph
-   commit id: "init"
-```
-
-```
-* ef73163 commit
-
+   commit id: "start"
+   commit id: "2183e6"
 ```
