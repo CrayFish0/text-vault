@@ -1,59 +1,57 @@
 ```mermaid
 gitGraph
    commit id: "init"
-   commit id: "readme"
-   commit id: "ui"
-   commit id: "actions"
+   commit id: "base"
 
-   branch feature-1
-   checkout feature-1
-   commit id: "f1-1"
-   commit id: "f1-2"
-   commit id: "f1-3"
+   branch feature-ashmit
+   checkout feature-ashmit
+   commit id: "msg-ui"
+   commit id: "msg-api"
 
    checkout main
-   merge feature-1
-
-   branch feature-2
-   checkout feature-2
-   commit id: "f2-1"
-   commit id: "f2-2"
-   commit id: "f2-3"
+   branch feature-sagnik
+   checkout feature-sagnik
+   commit id: "ui-features"
+   commit id: "comments"
 
    checkout main
-
-   branch feature-3
-   checkout feature-3
-   commit id: "f3-1"
-   commit id: "f3-2"
-   commit id: "f3-3"
+   branch feature-anishka
+   checkout feature-anishka
+   commit id: "db"
+   commit id: "post-comment"
 
    checkout main
+   branch feature-soumyojit
+   checkout feature-soumyojit
+   commit id: "ui-update"
+   commit id: "ai"
 
-   branch feature-4
-   checkout feature-4
-   commit id: "f4-1"
-   commit id: "f4-2"
-   commit id: "f4-3"
+   checkout feature-anishka
+   merge feature-soumyojit
+
+   checkout feature-soumyojit
+   merge feature-sagnik
+   merge feature-ashmit
+
+   branch feature-poulami
+   checkout feature-poulami
+   commit id: "friend-controller"
+   merge feature-soumyojit
+
+   checkout feature-soumyojit
+   merge feature-poulami
+   merge feature-anishka
+
+   branch feature-anshi
+   checkout feature-anshi
+   commit id: "groups"
+
+   checkout feature-soumyojit
+   merge feature-anshi
 
    checkout main
+   merge feature-soumyojit
 
-   branch feature-5
-   checkout feature-5
-   commit id: "f5-1"
-   commit id: "f5-2"
-   commit id: "f5-3"
-
-   checkout main
-
-   commit id: "cleanup"
    commit id: "workflow"
-   commit id: "changes"
-
-   branch git-graph
-   checkout git-graph
-   commit id: "graph-update"
-
-   checkout main
    commit id: "final"
 ```
