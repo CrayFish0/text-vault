@@ -1,43 +1,24 @@
-name: Git Graph Visual
+name: Update Git Graph
 
 on:
   push:
-    branches: [main]
-  workflow_dispatch:
+    branches:
+      - main
 
 jobs:
-  graph:
+  update-graph:
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
 
-      - name: Install graphviz
-        run: sudo apt-get update && sudo apt-get install -y graphviz
+      - name: Generate graph
+        run: node generateGraph.js
 
-      - name: Generate DOT graph
+      - name: Commit changes
         run: |
-          git log --all --pretty=format:'"%h" -> "%p"' | sed 's/ /"; "/g' > graph.dot
-          echo "digraph G {" > final.dot
-          cat graph.dot >> final.dot
-          echo "}" >> final.dot
-
-      - name: Convert to PNG
-        run: dot -Tpng final.dot -o graph.png
-
-      - name: Push to graph branch
-        run: |
-          git clone --depth=1 --branch graph https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} graph-branch || \
-          git clone https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} graph-branch
-
-          cp graph.png graph-branch/
-          cd graph-branch
-
-          git config user.name "github-actions"
-          git config user.email "actions@github.com"
-
-          git add graph.png
-          git commit -m "update graph" || echo "no changes"
+          git config user.name "bot"
+          git config user.email "bot@example.com"
+          git add graph.md
+          git commit -m "Update git graph"
           git push
