@@ -1,19 +1,31 @@
 const { execSync } = require("child_process");
 const fs = require("fs");
 
-const log = execSync("git log --oneline --graph").toString();
+const log = execSync(
+  "git log --all --pretty=format:'%H %P %d %s'"
+).toString();
 
-const content = `
-## Git Graph
+let mermaid = "```mermaid\ngitGraph\n";
 
-\`\`\`mermaid
-gitGraph
-   commit id: "init"
-\`\`\`
+const commits = log.split("\n").reverse();
 
-\`\`\`
-${log}
-\`\`\`
-`;
+let branchMap = {};
+let currentBranch = "main";
 
-fs.writeFileSync("graph.md", content);
+mermaid += `   commit id: "start"\n`;
+
+commits.forEach((line, index) => {
+  const parts = line.split(" ");
+  const hash = parts[0];
+  const parents = parts.slice(1, 3).filter(p => /^[a-f0-9]+$/.test(p));
+
+  if (parents.length > 1) {
+    mermaid += `   merge ${currentBranch}\n`;
+  } else {
+    mermaid += `   commit id: "${hash.substring(0, 6)}"\n`;
+  }
+});
+
+mermaid += "```";
+
+fs.writeFileSync("graph.md", mermaid);
