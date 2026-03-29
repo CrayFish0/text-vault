@@ -15,10 +15,12 @@ jobs:
       - name: Generate graph
         run: node generateGraph.js
 
-      - name: Commit changes
+      - name: Push to git-graph branch
         run: |
           git config user.name "bot"
           git config user.email "bot@example.com"
+
+          git checkout -B git-graph
           git add graph.md
-          git commit -m "Update git graph"
-          git push
+          git commit -m "Update git graph" || echo "No changes to commit"
+          git push origin git-graph --force
